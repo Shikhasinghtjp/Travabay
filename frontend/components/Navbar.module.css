@@ -215,7 +215,63 @@
 .hamburger:hover {
   background: #f5f5f5;
 }
+/* Profile Icon and Dropdown Container */
+.profileContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
 
+.navIcon {
+  cursor: pointer;
+  color: #333; /* Default icon color */
+  transition: color 0.2s;
+  padding: 5px 10px;
+}
+
+.navIcon:hover {
+  color: #157dc2; /* Hover color */
+}
+
+/* Profile Dropdown Menu */
+.profileDropdown {
+  position: absolute;
+  top: 100%; /* Position below the icon */
+  right: 0;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 180px;
+  z-index: 1000; /* Ensure it stays above other content */
+  display: flex;
+  flex-direction: column;
+  padding: 5px 0;
+  border-radius: 4px;
+}
+
+.dropdownUsername {
+  padding: 8px 15px;
+  font-weight: bold;
+  color: #157dc2;
+  border-bottom: 1px solid #eee;
+  margin: 0;
+}
+
+.dropdownItem {
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #333;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.1s;
+}
+
+.dropdownItem:hover {
+  background-color: #f0f0f0;
+}
 .bottomBar {
   background-color: #157DC2;
   color: #ffffff;
