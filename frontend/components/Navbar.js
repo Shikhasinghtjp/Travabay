@@ -13,6 +13,8 @@ import {
   FaSearch,
   FaMinus,
   FaPlus,
+  FaUserCircle,
+  FaShoppingCart,
 } from "react-icons/fa";
 import Modal from "./CorporateModal";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,49 +26,49 @@ const Navbar = () => {
   //Dummy data for categories
   const categories = [
     {
-      name: 'International Trips',
+      name: "International Trips",
       subcategories: [
-        { name: 'Europe', link: '/trips' },
-        { name: 'Asia', link: '/trips' },
-        { name: 'America', link: '/trips' },
-        { name: 'Europe', link: '/international/europe' },
-        { name: 'Asia', link: '/trips' },
-        { name: 'America', link: '/trips' },
-        { name: 'Europe', link: '/international/europe' },
-        { name: 'Asia', link: '/trips' },
-        { name: 'America', link: '/trips' },
-        { name: 'Europe', link: '/international/europe' },
-        { name: 'Asia', link: '/trips' },
-        { name: 'America', link: '/trips' },
-        { name: 'Europe', link: '/international/europe' },
-        { name: 'Asia', link: '/trips' },
-        { name: 'America', link: '/trips' },
-      ]
+        { name: "Europe", link: "/trips" },
+        { name: "Asia", link: "/trips" },
+        { name: "America", link: "/trips" },
+        { name: "Europe", link: "/international/europe" },
+        { name: "Asia", link: "/trips" },
+        { name: "America", link: "/trips" },
+        { name: "Europe", link: "/international/europe" },
+        { name: "Asia", link: "/trips" },
+        { name: "America", link: "/trips" },
+        { name: "Europe", link: "/international/europe" },
+        { name: "Asia", link: "/trips" },
+        { name: "America", link: "/trips" },
+        { name: "Europe", link: "/international/europe" },
+        { name: "Asia", link: "/trips" },
+        { name: "America", link: "/trips" },
+      ],
     },
     {
-      name: 'India Trips',
+      name: "India Trips",
       subcategories: [
-        { name: 'North India', link: '/india/' },
-        { name: 'South India', link: '/india/south' },
-        { name: 'East India', link: '/india/east' }
-      ]
+        { name: "North India", link: "/india/" },
+        { name: "South India", link: "/india/south" },
+        { name: "East India", link: "/india/east" },
+      ],
     },
     {
-      name: 'Weekend Trips',
+      name: "Weekend Trips",
       subcategories: [
-        { name: 'Hill Stations', link: '/weekend/hills' },
-        { name: 'Beaches', link: '/weekend/beach' },
-        { name: 'City Breaks', link: '/weekend/city' }
-      ]
+        { name: "Hill Stations", link: "/weekend/hills" },
+        { name: "Beaches", link: "/weekend/beach" },
+        { name: "City Breaks", link: "/weekend/city" },
+      ],
     },
     {
-      name: 'Group Tours',
+      name: "Group Tours",
       subcategories: [
-        { name: 'Family Tours', link: '/group/family' },
-        { name: 'Friends Tours', link: '/group/friends' },
-        { name: 'Corporate Tours', link: '/group/corporate' }
-      ]
-    }
+        { name: "Family Tours", link: "/group/family" },
+        { name: "Friends Tours", link: "/group/friends" },
+        { name: "Corporate Tours", link: "/group/corporate" },
+      ],
+    },
   ];
   const getColumnClass = (subcategories) => {
     if (subcategories.length > 16) {
@@ -74,7 +76,7 @@ const Navbar = () => {
     } else if (subcategories.length > 8) {
       return styles.twoColumns; // 2 columns
     } else {
-      return ''; // 1 column
+      return ""; // 1 column
     }
   };
   //Search Bar
@@ -97,7 +99,6 @@ const Navbar = () => {
     { name: "East India", link: "/india/east" },
     { name: "Weekend Trips", link: "/weekend" },
     { name: "Group Tours", link: "/group" },
-    
   ];
   const filteredResults = searchData.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -113,19 +114,44 @@ const Navbar = () => {
       document.removeEventListener("click", handleClickOutside);
     };
   }, []);
-  
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
+  const checkAuthStatus = () => {
+    const token = localStorage.getItem("userToken");
+    const userData = localStorage.getItem("userData");
+
+    if (token && userData) {
+      try {
+        const user = JSON.parse(userData);
+        setIsLoggedIn(true);
+        setUserName(user.fullName || user.email); // Use full name or fallback to email
+      } catch (e) {
+        localStorage.removeItem("userToken");
+        localStorage.removeItem("userData");
+        setIsLoggedIn(false);
+      }
+    } else {
+      setIsLoggedIn(false);
+    }
+  };
+
   useEffect(() => {
+     // 1. Check Auth Status on component mount
+     checkAuthStatus();
     // Calculate scrollbar width aur CSS variable me set karo
     const scrollbarWidth =
       window.innerWidth - document.documentElement.clientWidth;
-  
+
     document.documentElement.style.setProperty(
       "--scrollbar-compensate",
       `${scrollbarWidth}px`
     );
   }, []);
-  
-// Modal Hooks and Handlers
+
+  // Modal Hooks and Handlers
   const [menuOpen, setMenuOpen] = useState(false);
   const [isCorporateModalOpen, setIsCorporateModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -152,9 +178,13 @@ const Navbar = () => {
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
     fullName: "",
+    username: "",
     email: "",
     password: "",
+    cpassword: "",
     phone: "",
+    gender: "",
+    address: "",
   });
   const [forgotPasswordForm, setForgotPasswordForm] = useState({ email: "" });
   const [errors, setErrors] = useState({});
@@ -181,7 +211,16 @@ const Navbar = () => {
   const openRegisterModal = () => setIsRegisterModalOpen(true);
   const closeRegisterModal = () => {
     setIsRegisterModalOpen(false);
-    setRegisterForm({ fullName: "", email: "", password: "", phone: "" });
+    setRegisterForm({
+      fullName: "",
+      username: "",
+      cpassword: "",
+      gender: "",
+      address: "",
+      email: "",
+      password: "",
+      phone: "",
+    });
     setErrors({});
   };
   const openForgotPasswordModal = () => setIsForgotPasswordModalOpen(true);
@@ -217,12 +256,25 @@ const Navbar = () => {
   const validateRegister = () => {
     const newErrors = {};
     if (!registerForm.fullName) newErrors.fullName = "Full name is required";
+    if (!registerForm.username || registerForm.username.length < 3)
+      newErrors.username = "Username must be at least 3 characters";
+
     if (!registerForm.email || !/^\S+@\S+\.\S+$/.test(registerForm.email))
       newErrors.email = "Valid email is required";
+
     if (!registerForm.password || registerForm.password.length < 6)
       newErrors.password = "Password must be at least 6 characters";
+
+    if (registerForm.password !== registerForm.cpassword)
+      newErrors.cpassword = "Passwords do not match";
+
     if (!registerForm.phone || !/^\+?\d{10,12}$/.test(registerForm.phone))
       newErrors.phone = "Valid phone number is required";
+
+    if (!registerForm.gender) newErrors.gender = "Please select your gender";
+
+    if (!registerForm.address) newErrors.address = "Address is required";
+
     return newErrors;
   };
 
@@ -249,30 +301,107 @@ const Navbar = () => {
     }
   };
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    const newErrors = validateLogin();
+    const newErrors = validateLogin(); 
+
     if (Object.keys(newErrors).length === 0) {
-      toast.success("Logged in successfully!");
-      closeLoginModal();
+      setErrors({}); 
+
+      try {
+        const dataToSend = {
+          email: loginForm.email,
+          password: loginForm.password,
+        };
+
+        const response = await fetch("http://localhost:5000/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(dataToSend),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          toast.success(result.message || "Logged in successfully!");
+          localStorage.setItem("userToken", result.token);
+          localStorage.setItem("userData", JSON.stringify(result.user));
+          checkAuthStatus(); 
+          closeLoginModal();
+        } else {
+          toast.error(result.message || "Login failed. Please try again.");
+        }
+      } catch (error) {
+        console.error("Login failed:", error);
+        toast.error("Network error. Could not connect to the server.");
+      }
     } else {
-      toast.error("Please fix the errors in the form!");
+      toast.error("Please enter valid credentials!");
       setErrors(newErrors);
     }
   };
 
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateRegister();
+
+    if (registerForm.password !== registerForm.cpassword) {
+      newErrors.cpassword = "Passwords do not match";
+    }
+
     if (Object.keys(newErrors).length === 0) {
-      toast.success("Registration successful!");
-      closeRegisterModal();
+      setErrors({});
+
+      try {
+        const dataToSend = {
+          fullName: registerForm.fullName,
+          username: registerForm.username,
+          email: registerForm.email,
+          password: registerForm.password,
+          phone: registerForm.phone,
+          gender: registerForm.gender,
+          address: registerForm.address,
+        };
+
+        const response = await fetch(
+          "http://localhost:5000/api/auth/register",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(dataToSend),
+          }
+        );
+
+        const result = await response.json();
+
+        if (response.ok) {
+          toast.success(result.message || "Registration successful!");
+          closeRegisterModal();
+        } else {
+          toast.error(result.message || "Registration failed on server.");
+        }
+      } catch (error) {
+        console.error("Registration failed:", error);
+        toast.error("Network error. Please try again.");
+      }
     } else {
       toast.error("Please fix the errors in the form!");
       setErrors(newErrors);
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("userToken");
+    localStorage.removeItem("userData");
+    setIsLoggedIn(false);
+    setUserName("");
+    setIsProfileDropdownOpen(false);
+    toast.success("Logged out successfully!");
+  };
   const handleForgotPasswordSubmit = (e) => {
     e.preventDefault();
     const newErrors = validateForgotPassword();
@@ -286,12 +415,11 @@ const Navbar = () => {
   };
   const pathname = usePathname();
   //State hooks for toogling Categories
-    const [openMain, setOpenMain] = useState(false); 
-    const [openCategory, setOpenCategory] = useState(null); 
-    const toggleCategory = (categoryName) => {
-      setOpenCategory(openCategory === categoryName ? null : categoryName);
-    };
-  
+  const [openMain, setOpenMain] = useState(false);
+  const [openCategory, setOpenCategory] = useState(null);
+  const toggleCategory = (categoryName) => {
+    setOpenCategory(openCategory === categoryName ? null : categoryName);
+  };
 
   return (
     <header className={styles.header}>
@@ -310,7 +438,10 @@ const Navbar = () => {
               type="text"
               placeholder="Search..."
               value={searchQuery}
-              onChange={(e) => {setSearchQuery(e.target.value);setShowResults(true);}}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowResults(true);
+              }}
               className={styles.searchInput}
               onFocus={() => setShowResults(true)}
             />
@@ -429,61 +560,114 @@ const Navbar = () => {
           >
             Contact Us
           </Link>
-          <Link
-            href="/login"
-            onClick={(e) => {
-              e.preventDefault();
-              openLoginModal();
-            }}
-            className={`${styles.navLink} ${
-              pathname === "/login" ? styles.activeLink : ""
-            }`}
-          >
-            LogIn
-          </Link>
-          <Link
-            href="/register"
-            onClick={(e) => {
-              e.preventDefault();
-              openRegisterModal();
-            }}
-            className={`${styles.navLink, styles.registerLink} ${
-              pathname === "/register" ? styles.activeLink : ""
-            }`}
-          >
-            Register
-          </Link>
+          {/* CONDITIONAL RENDERING BLOCK FOR AUTH */}
+          {!isLoggedIn ? (
+            // SHOW LOGIN/REGISTER BUTTONS
+            <>
+              <Link
+                href="/login"
+                onClick={(e) => {
+                  e.preventDefault();
+                  openLoginModal();
+                }}
+                className={`${styles.navLink} ${
+                  pathname === "/login" ? styles.activeLink : ""
+                }`}
+              >
+                LogIn
+              </Link>
+              <Link
+                href="/register"
+                onClick={(e) => {
+                  e.preventDefault();
+                  openRegisterModal();
+                }}
+                className={`${(styles.navLink, styles.registerLink)} ${
+                  pathname === "/register" ? styles.activeLink : ""
+                }`}
+              >
+                Register
+              </Link>
+            </>
+          ) : (
+            // SHOW PROFILE & CART ICONS
+            <>
+              <div className={styles.profileContainer}>
+                {/* Profile Icon with Dropdown */}
+                <div
+                  className={styles.navIcon}
+                  onClick={() =>
+                    setIsProfileDropdownOpen(!isProfileDropdownOpen)
+                  }
+                >
+                  {/* Using an icon for the profile, e.g., FaUserCircle or FaUser */}
+                  <FaUserCircle size={24} />
+                </div>
+
+                {isProfileDropdownOpen && (
+                  <div className={styles.profileDropdown}>
+                    <p className={styles.dropdownUsername}>Hello, {userName}</p>
+                    <Link
+                      href="/edit-profile"
+                      className={styles.dropdownItem}
+                      onClick={() => setIsProfileDropdownOpen(false)}
+                    >
+                      Edit Profile
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className={styles.dropdownItem}
+                      style={{ textAlign: "left" }}
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Cart Icon (Assuming you need one) */}
+              <Link href="/cart" className={styles.navIcon}>
+                <FaShoppingCart size={24} />
+              </Link>
+            </>
+          )}
         </nav>
       </div>
 
       {/* BottomBar Categories (Desktop Only) */}
       <div className={styles.bottomBar}>
-      <div className={styles.categoryLinks}>
-        {categories.map((cat) => (
-          <div key={cat.name} className={styles.categoryDropdown}>
-           
-            <div
-              className={styles.categoryLink}
-              onClick={() => toggleCategory(cat.name)}
-            >
-              {cat.name} ▾
-            </div>
+        <div className={styles.categoryLinks}>
+          {categories.map((cat) => (
+            <div key={cat.name} className={styles.categoryDropdown}>
+              <div
+                className={styles.categoryLink}
+                onClick={() => toggleCategory(cat.name)}
+              >
+                {cat.name} ▾
+              </div>
 
-            {/* Show subcategories when the category is clicked */}
-            {openCategory === cat.name && (
-            <div className={`${styles.categoryDropdownContent} ${getColumnClass(cat.subcategories)}`}>
-            {cat.subcategories.map((sub) => (
-              <Link key={sub.name} href={sub.link} className={styles.dropdownItem}>
-                {sub.name}
-              </Link>
-            ))}
-          </div>
-          
-            )}
-          </div>
-        ))}
+              {/* Show subcategories when the category is clicked */}
+              {openCategory === cat.name && (
+                <div
+                  className={`${
+                    styles.categoryDropdownContent
+                  } ${getColumnClass(cat.subcategories)}`}
+                >
+                  {cat.subcategories.map((sub) => (
+                    <Link
+                      key={sub.name}
+                      href={sub.link}
+                      className={styles.dropdownItem}
+                    >
+                      {sub.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
 
       {/* Mobile Combined Menu */}
       {menuOpen && (
@@ -539,77 +723,114 @@ const Navbar = () => {
             >
               Contact Us
             </Link>
-            <Link
-              href="/login"
-              onClick={(e) => {
-                e.preventDefault();
-                openLoginModal();
-                setMenuOpen(false);
-              }}
-              className={styles.navLink}
-            >
-              LogIn
-            </Link>
-            <Link
-              href="/register"
-              onClick={(e) => {
-                e.preventDefault();
-                openRegisterModal();
-                setMenuOpen(false);
-              }}
-              className={styles.navLink}
-            >
-              Register
-            </Link>
+            {!isLoggedIn ? (
+              // SHOW LOGIN/REGISTER LINKS IN MOBILE
+              <>
+                <Link
+                  href="/login"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openLoginModal();
+                    setMenuOpen(false);
+                  }}
+                  className={styles.navLink}
+                >
+                  LogIn
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openRegisterModal();
+                    setMenuOpen(false);
+                  }}
+                  className={styles.navLink}
+                >
+                  Register
+                </Link>
+              </>
+            ) : (
+              // SHOW USER OPTIONS IN MOBILE
+              <>
+                <div className={styles.navLink} style={{ fontWeight: "bold" }}>
+                  Hello, {userName}
+                </div>
+                <Link
+                  href="/edit-profile"
+                  className={styles.navLink}
+                  onClick={handleNavClick}
+                >
+                  Edit Profile
+                </Link>
+                <Link
+                  href="/cart"
+                  className={styles.navLink}
+                  onClick={handleNavClick}
+                >
+                  Cart
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    handleNavClick(); // Close the mobile menu after logging out
+                  }}
+                  className={styles.navLink}
+                  style={{ textAlign: "left" }}
+                >
+                  Logout
+                </button>
+              </>
+            )}
           </nav>
 
           <div className={styles.mobileCategories}>
-      {/* Main Accordion */}
-      <div
-        className={styles.categoryHeader}
-        onClick={() => setOpenMain(!openMain)}
-      >
-        <span>Categories</span>
-        <span className={styles.toggleIcon}>
-          {openMain ? <FaMinus /> : <FaPlus />}
-        </span>
-      </div>
-
-      {/* Show all categories only if main is open */}
-      {openMain && (
-        <div className={styles.categoriesList}>
-          {categories.map((cat) => (
-            <div key={cat.name} className={styles.categoryItem}>
-              <div
-                className={styles.categoryHeader}
-                onClick={() => toggleCategory(cat.name)}
-              >
-                <span>{cat.name}</span>
-                <span className={styles.toggleIcon}>
-                  {openCategory === cat.name ? <FaMinus /> : <FaPlus />}
-                </span>
-              </div>
-
-              {/* ✅ Show subcategories only when this category is open */}
-              {openCategory === cat.name && cat.subcategories.length > 0 && (
-                <div className={styles.subCategoryList}>
-                  {cat.subcategories.map((sub) => (
-                    <Link
-                      key={sub.name}
-                      href={sub.link}
-                      className={styles.subCategoryItem}
-                      onClick={handleNavClick}
-                    >
-                      {sub.name}
-                    </Link>
-                  ))}
-                </div>
-              )}
+            {/* Main Accordion */}
+            <div
+              className={styles.categoryHeader}
+              onClick={() => setOpenMain(!openMain)}
+            >
+              <span>Categories</span>
+              <span className={styles.toggleIcon}>
+                {openMain ? <FaMinus /> : <FaPlus />}
+              </span>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+
+            {/* Show all categories only if main is open */}
+            {openMain && (
+              <div className={styles.categoriesList}>
+                {categories.map((cat) => (
+                  <div key={cat.name} className={styles.categoryItem}>
+                    <div
+                      className={styles.categoryHeader}
+                      onClick={() => toggleCategory(cat.name)}
+                    >
+                      <span>{cat.name}</span>
+                      <span className={styles.toggleIcon}>
+                        {openCategory === cat.name ? <FaMinus /> : <FaPlus />}
+                      </span>
+                    </div>
+
+                    {/* ✅ Show subcategories only when this category is open */}
+                    {openCategory === cat.name &&
+                      cat.subcategories.length > 0 && (
+                        <div className={styles.subCategoryList}>
+                          {cat.subcategories.map((sub) => (
+                            <Link
+                              key={sub.name}
+                              href={sub.link}
+                              className={styles.subCategoryItem}
+                              onClick={handleNavClick}
+                            >
+                              {sub.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -624,12 +845,6 @@ const Navbar = () => {
               transition={{ duration: 0.3 }}
               className={styles.modalContent}
             >
-              {/* <button
-                className={styles.closeButton}
-                onClick={closeCorporateModal}
-              >
-                &times;
-              </button> */}
               <h2 className={styles.modalTitle}>Corporate Booking</h2>
               <form
                 className={styles.modalForm}
@@ -744,9 +959,6 @@ const Navbar = () => {
               transition={{ duration: 0.3 }}
               className={styles.modalContent}
             >
-              {/* <button className={styles.closeButton} onClick={closeLoginModal}>
-                &times;
-              </button> */}
               <h2 className={styles.modalTitle}>Log In</h2>
               <form className={styles.modalForm} onSubmit={handleLoginSubmit}>
                 <div className={styles.formGroup}>
@@ -809,12 +1021,6 @@ const Navbar = () => {
               transition={{ duration: 0.3 }}
               className={styles.modalContent}
             >
-              {/* <button
-                className={styles.closeButton}
-                onClick={closeRegisterModal}
-              >
-                &times;
-              </button> */}
               <h2 className={styles.modalTitle}>Register</h2>
               <form
                 className={styles.modalForm}
@@ -838,6 +1044,26 @@ const Navbar = () => {
                     <span className={styles.error}>{errors.fullName}</span>
                   )}
                 </div>
+
+                <div className={styles.formGroup}>
+                  <label>Username</label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={registerForm.username}
+                    onChange={(e) =>
+                      setRegisterForm({
+                        ...registerForm,
+                        username: e.target.value,
+                      })
+                    }
+                    placeholder="Enter your Username"
+                  />
+                  {errors.username && (
+                    <span className={styles.error}>{errors.username}</span>
+                  )}
+                </div>
+
                 <div className={styles.formGroup}>
                   <label>Email</label>
                   <input
@@ -856,6 +1082,7 @@ const Navbar = () => {
                     <span className={styles.error}>{errors.email}</span>
                   )}
                 </div>
+
                 <div className={styles.formGroup}>
                   <label>Password</label>
                   <input
@@ -874,6 +1101,26 @@ const Navbar = () => {
                     <span className={styles.error}>{errors.password}</span>
                   )}
                 </div>
+
+                <div className={styles.formGroup}>
+                  <label>Confirm Password</label>
+                  <input
+                    type="password"
+                    className={styles.formInput}
+                    value={registerForm.cpassword}
+                    onChange={(e) =>
+                      setRegisterForm({
+                        ...registerForm,
+                        cpassword: e.target.value,
+                      })
+                    }
+                    placeholder="Confirm your password"
+                  />
+                  {errors.cpassword && (
+                    <span className={styles.error}>{errors.cpassword}</span>
+                  )}
+                </div>
+
                 <div className={styles.formGroup}>
                   <label>Phone Number</label>
                   <input
@@ -890,6 +1137,50 @@ const Navbar = () => {
                   />
                   {errors.phone && (
                     <span className={styles.error}>{errors.phone}</span>
+                  )}
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label>Gender</label>
+                  <select
+                    className={styles.formInput}
+                    value={registerForm.gender}
+                    onChange={(e) =>
+                      setRegisterForm({
+                        ...registerForm,
+                        gender: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="" disabled>
+                      Select your gender
+                    </option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer_not_to_say">Prefer not to say</option>
+                  </select>
+                  {errors.gender && (
+                    <span className={styles.error}>{errors.gender}</span>
+                  )}
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label>Address</label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={registerForm.address}
+                    onChange={(e) =>
+                      setRegisterForm({
+                        ...registerForm,
+                        address: e.target.value,
+                      })
+                    }
+                    placeholder="Enter your full street address"
+                  />
+                  {errors.address && (
+                    <span className={styles.error}>{errors.address}</span>
                   )}
                 </div>
                 <button type="submit" className={styles.submitButton}>
