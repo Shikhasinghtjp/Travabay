@@ -314,7 +314,7 @@ const Navbar = () => {
           password: loginForm.password,
         };
 
-        const response = await fetch("http://localhost:5000/api/auth/login", {
+        const response = await fetch("http://localhost:5000/api/users/auth/login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -366,7 +366,7 @@ const Navbar = () => {
         };
 
         const response = await fetch(
-          "http://localhost:5000/api/auth/register",
+          "http://localhost:5000/api/users/auth/register",
           {
             method: "POST",
             headers: {
