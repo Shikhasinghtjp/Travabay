@@ -26,6 +26,9 @@ const SubcategoryListPage = () => {
   const [subcategoryName, setSubcategoryName] = useState("");
   const [categoryId, setCategoryId] = useState<number>(0);
   const [status, setStatus] = useState<"Active" | "Inactive">("Active");
+ 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingSubcategoryId, setEditingSubcategoryId] = useState<number | null>(null);
 
   const fetchSubcategories = async () => {
     setLoading(true);
@@ -56,9 +59,57 @@ const SubcategoryListPage = () => {
     fetchCategories();
     fetchSubcategories();
   }, []);
+  const resetForm = () => {
+    setSubcategoryName("");
+    setCategoryId(0);
+    setStatus("Active");
+    setIsEditing(false);
+    setEditingSubcategoryId(null);
+    setShowForm(false);
+  };
 
-  const handleAddSubcategory = async (e: React.FormEvent) => {
+  const handleEdit = (subcategory: Subcategory) => {
+    setSubcategoryName(subcategory.subcategory);
+    setCategoryId(subcategory.category_id);
+    setStatus(subcategory.status);
+    setEditingSubcategoryId(subcategory.id);
+    setIsEditing(true);
+    setShowForm(true);
+  };
+
+  const handleUpdateSubcategory = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!subcategoryName || !categoryId || !status || !editingSubcategoryId) {
+        return alert("All fields required for update!");
+    }
+
+    setIsSubmitting(true);
+    try {
+        const res = await fetch(`http://localhost:5000/api/admin/subcategories/${editingSubcategoryId}`, {
+            method: "PUT", // Use PUT for update
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subcategory: subcategoryName, category_id: categoryId, status }),
+        });
+        if (!res.ok) throw new Error("Failed to update subcategory");
+        
+        resetForm();
+        fetchSubcategories();
+    } catch (err: any) {
+        alert(err.message);
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isEditing) {
+        handleUpdateSubcategory(e);
+    } else {
+        handleAddSubcategory(e);
+    }
+  }
+  const handleAddSubcategory = async (e: React.FormEvent) => {
+    // Note: e.preventDefault() is handled by handleSubmit
     if (!subcategoryName || !categoryId || !status) return alert("All fields required!");
 
     setIsSubmitting(true);
@@ -69,10 +120,7 @@ const SubcategoryListPage = () => {
         body: JSON.stringify({ subcategory: subcategoryName, category_id: categoryId, status }),
       });
       if (!res.ok) throw new Error("Failed to add subcategory");
-      setSubcategoryName("");
-      setCategoryId(0);
-      setStatus("Active");
-      setShowForm(false);
+      resetForm();
       fetchSubcategories();
     } catch (err: any) {
       alert(err.message);
@@ -118,11 +166,7 @@ const SubcategoryListPage = () => {
       <nav className="text-gray-500 text-sm mb-4">
         <Link href="/" className="hover:underline">Home</Link> /{" "}
         <Link href="/packages" className="hover:underline">Category</Link> /{" "}
-        {!showForm ? (
-          <span className="text-gray-700">Subcategory</span>
-        ) : (
-          <span className="text-gray-700">New Subcategory</span>
-        )}
+        <span className="text-gray-700">{showForm ? (isEditing ? "Edit Subcategory" : "New Subcategory") : "Subcategory"}</span>
       </nav>
 
       <div className="flex justify-between items-center border-b-2 pb-2 border-gray-200 mb-6">
@@ -142,9 +186,13 @@ const SubcategoryListPage = () => {
         // Form aligned left
         <div className="flex">
           <form
-            onSubmit={handleAddSubcategory}
+            onSubmit={handleSubmit}
             className="bg-white p-6 rounded-2xl shadow-xl space-y-4 w-full max-w-lg"
           >
+            <h3 className="text-xl font-bold text-gray-800">
+                {isEditing ? `Edit Subcategory (ID: ${editingSubcategoryId})` : "Add New Subcategory"}
+            </h3>
+
              <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700">
                 Select Category
@@ -196,17 +244,17 @@ const SubcategoryListPage = () => {
               </select>
             </div>
 
-            <div className="flex space-x-2">
+           <div className="flex space-x-2">
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="flex-1 py-2 px-4 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 disabled:opacity-50"
               >
-                {isSubmitting ? "Saving..." : "Save Subcategory"}
+                {isSubmitting ? "Saving..." : isEditing ? "Update Subcategory" : "Save Subcategory"}
               </button>
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={resetForm} // 🏆 MODIFIED: Use resetForm
                 className="flex-1 py-2 px-4 bg-gray-300 text-gray-700 rounded-lg shadow hover:bg-gray-400"
               >
                 Cancel
@@ -243,8 +291,16 @@ const SubcategoryListPage = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm space-x-3">
-                      <button className="text-blue-600 hover:text-blue-800"><FaEdit size={16} /></button>
-                      <button onClick={() => handleDelete(sub.id)} className="text-red-600 hover:text-red-800"><FaTrash size={16} /></button>
+                      
+                      <button 
+                        onClick={() => handleEdit(sub)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <FaEdit size={16} />
+                      </button>
+                      <button onClick={() => handleDelete(sub.id)} className="text-red-600 hover:text-red-800">
+                        <FaTrash size={16} />
+                      </button>
                     </td>
                   </tr>
                 ))

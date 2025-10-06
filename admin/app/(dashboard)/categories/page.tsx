@@ -18,6 +18,31 @@ const CategoryListPage: React.FC = () => {
   const [categoryName, setCategoryName] = useState("");
   const [status, setStatus] = useState<"Active" | "Inactive">("Active");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // 🏆 NEW STATE FOR EDITING
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(
+    null
+  );
+
+  // ----------------------------------------------------
+  // 🏆 NEW: Form Reset Function
+  // ----------------------------------------------------
+  const resetForm = () => {
+    setCategoryName("");
+    setStatus("Active");
+    setIsEditing(false);
+    setEditingCategoryId(null);
+    setShowForm(false);
+  };
+  const handleOpenAddForm = () => {
+    // Clear editing state and fields
+    setCategoryName("");
+    setStatus("Active");
+    setIsEditing(false);
+    setEditingCategoryId(null);
+    // Show the empty form
+    setShowForm(true); 
+};
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -25,21 +50,104 @@ const CategoryListPage: React.FC = () => {
     try {
       const res = await fetch("http://localhost:5000/api/admin/categories");
       if (!res.ok) throw new Error("Failed to fetch categories");
-      const data = await res.json();
-      setCategories(data);
-    } catch (err: any) {
+      
+      // Fetch raw data (status might be lowercase or inconsistent)
+      const rawData: any[] = await res.json();
+      
+      // 🏆 FIX: Normalize status field during mapping
+      const processedData: Category[] = rawData.map(item => {
+          const normalizedStatus = 
+              item.status && typeof item.status === 'string' && item.status.toLowerCase() === 'active'
+              ? 'Active'
+              : 'Inactive'; // Defaulting to Inactive if not 'Active'
+          
+          return {
+              ...item,
+              // Assert the normalized status onto the object
+              status: normalizedStatus as "Active" | "Inactive"
+          };
+      });
+
+      setCategories(processedData); // Set the normalized data
+
+  } catch (err: any) {
       setError(err.message);
-    } finally {
+  } finally {
       setLoading(false);
-    }
-  };
+  }
+};
 
   useEffect(() => {
     fetchCategories();
   }, []);
+  const handleDeleteCategory = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this category?"))
+      return;
 
-  const handleAddCategory = async (e: React.FormEvent) => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/admin/categories/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!res.ok) throw new Error("Failed to delete category");
+      fetchCategories();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+  // ----------------------------------------------------
+  // 🏆 NEW: Handle Edit Button Click
+  // ----------------------------------------------------
+  const handleEdit = (category: Category) => {
+    setCategoryName(category.category);
+    setStatus(category.status);
+    setEditingCategoryId(category.id);
+    setIsEditing(true);
+    setShowForm(true);
+  };
+  // ----------------------------------------------------
+  // 🏆 NEW: Handle Update API Call
+  // ----------------------------------------------------
+  const handleUpdateApi = async () => {
+    if (!categoryName || !status || !editingCategoryId)
+      return alert("Missing data for update!");
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/admin/categories/${editingCategoryId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ category: categoryName, status }),
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to update category");
+
+      alert("Category updated successfully!");
+      resetForm();
+      fetchCategories();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  // ----------------------------------------------------
+  // 🏆 MODIFIED: Combined Submit Handler
+  // ----------------------------------------------------
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isEditing) {
+      handleUpdateApi();
+    } else {
+      handleAddCategory(e);
+    }
+  };
+  const handleAddCategory = async (e: React.FormEvent) => {
     if (!categoryName || !status) return alert("All fields required!");
 
     setIsSubmitting(true);
@@ -50,33 +158,13 @@ const CategoryListPage: React.FC = () => {
         body: JSON.stringify({ category: categoryName, status }),
       });
       if (!res.ok) throw new Error("Failed to add category");
-      setCategoryName("");
-      setStatus("Active");
-      setShowForm(false);
+      resetForm();
       fetchCategories();
     } catch (err: any) {
       alert(err.message);
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleDeleteCategory = async (id: number) => {
-    if (!window.confirm("Are you sure you want to delete this category?")) return;
-
-    try {
-      const res = await fetch(`http://localhost:5000/api/admin/categories/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete category");
-      fetchCategories();
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
-
-  const handleUpdateCategory = (id: number) => {
-    console.log("Edit category ID:", id);
   };
 
   if (loading) {
@@ -101,23 +189,28 @@ const CategoryListPage: React.FC = () => {
     <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
       {/* Breadcrumb */}
       <nav className="text-gray-500 text-sm mb-4">
-        <Link href="/" className="hover:underline">Home</Link> /{" "}
-        {!showForm ? (
-          <span className="text-gray-700">Category</span>
-        ) : (
+        <Link href="/" className="hover:underline">
+          Home
+        </Link>{" "}
+        / <span className="text-gray-700">Category</span>
+        {showForm && (
           <>
-            <Link href="/categories" className="hover:underline">Category</Link> /{" "}
-            <span className="text-gray-700">New Category</span>
+            {" / "}
+            <span className="text-gray-700">
+              {isEditing ? "Edit Category" : "New Category"}
+            </span>
           </>
         )}
       </nav>
 
       {/* Header */}
       <div className="flex justify-between items-center border-b-2 pb-2 border-gray-200 mb-6">
-        <h2 className="text-4xl font-extrabold text-green-700">Categories Management</h2>
+        <h2 className="text-4xl font-extrabold text-green-700">
+          Categories Management
+        </h2>
         {!showForm && (
           <button
-            onClick={() => setShowForm(true)}
+          onClick={handleOpenAddForm}
             className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-300 transform hover:scale-105"
           >
             <FaPlus size={16} />
@@ -130,11 +223,18 @@ const CategoryListPage: React.FC = () => {
         // Form left-aligned
         <div className="flex">
           <form
-            onSubmit={handleAddCategory}
+            onSubmit={handleSubmit}
             className="bg-white p-6 rounded-2xl shadow-xl space-y-4 w-full max-w-lg"
           >
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">
+              {isEditing
+                ? `Edit Category (ID: ${editingCategoryId})`
+                : "Add New Category"}
+            </h3>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Category Name</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Category Name
+              </label>
               <input
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value)}
@@ -145,10 +245,14 @@ const CategoryListPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Status
+              </label>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value as "Active" | "Inactive")}
+                onChange={(e) =>
+                  setStatus(e.target.value as "Active" | "Inactive")
+                }
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-gray-900"
               >
                 <option value="Active">Active</option>
@@ -162,11 +266,18 @@ const CategoryListPage: React.FC = () => {
                 disabled={isSubmitting}
                 className="flex-1 py-2 px-4 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 disabled:opacity-50"
               >
-                {isSubmitting ? "Saving..." : "Save Category"}
+                {isSubmitting
+                  ? "Saving..."
+                  : isEditing
+                  ? "Update Category"
+                  : "Save Category"}
               </button>
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={() => {
+                  resetForm(); 
+                  setShowForm(false); 
+                }}
                 className="flex-1 py-2 px-4 bg-gray-300 text-gray-700 rounded-lg shadow hover:bg-gray-400"
               >
                 Cancel
@@ -179,32 +290,52 @@ const CategoryListPage: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-green-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-green-600 uppercase">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-green-600 uppercase">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-green-600 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-green-600 uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-green-600 uppercase">
+                  ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-green-600 uppercase">
+                  Category
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-green-600 uppercase">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-green-600 uppercase">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {categories.length > 0 ? (
                 categories.map((cat) => (
                   <tr key={cat.id} className="hover:bg-green-50 transition">
-                    <td className="px-6 py-4 text-sm text-gray-900">{cat.id}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{cat.category}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {cat.id}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {cat.category}
+                    </td>
                     <td className="px-6 py-4 text-sm">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          cat.status === "Active" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                          cat.status === "Active"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
                         {cat.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm space-x-3">
-                      <button onClick={() => handleUpdateCategory(cat.id)} className="text-blue-600 hover:text-blue-800">
+                      <button
+                        onClick={() => handleEdit(cat)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
                         <FaEdit size={16} />
                       </button>
-                      <button onClick={() => handleDeleteCategory(cat.id)} className="text-red-600 hover:text-red-800">
+                      <button
+                        onClick={() => handleDeleteCategory(cat.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
                         <FaTrash size={16} />
                       </button>
                     </td>
@@ -212,7 +343,12 @@ const CategoryListPage: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No categories found.</td>
+                  <td
+                    colSpan={4}
+                    className="px-6 py-8 text-center text-gray-500"
+                  >
+                    No categories found.
+                  </td>
                 </tr>
               )}
             </tbody>
