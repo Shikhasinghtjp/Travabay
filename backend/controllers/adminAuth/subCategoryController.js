@@ -49,21 +49,55 @@ export const addSubcategory = async (req, res) => {
     res.status(500).json({ message: "Failed to add subcategory." });
   }
 };
+//Update
 
-// Delete a subcategory
-export const deleteSubcategory = async (req, res) => {
+
+export const updateSubcategory = async (req, res) => {
   const { id } = req.params;
+  const { subcategory, category_id, status } = req.body;
+
+  if (!subcategory || !category_id || !status) {
+      return res.status(400).json({ message: "All fields are required for a complete update." });
+  }
+
   try {
-    const sql = "DELETE FROM subcategories WHERE id = ?";
-    const result = await query(sql, [id]);
+      const sql = `
+          UPDATE subcategories
+          SET subcategory = ?, category_id = ?, status = ?
+          WHERE id = ?
+      `;
+      
+      // 🏆 FIX: Use .trim() to remove leading/trailing whitespace and line breaks
+      const trimmedSql = sql.trim(); 
 
-    if (result.affectedRows === 0)
-      return res.status(404).json({ message: "Subcategory not found." });
+      // Execute the query using the trimmed string
+      const result = await query(trimmedSql, [subcategory, category_id, status, id]);
 
-    res.status(200).json({ message: "Subcategory deleted successfully." });
+      if (result.affectedRows === 0) {
+          return res.status(404).json({ message: "Subcategory not found." });
+      }
+
+      res.status(200).json({ message: "Subcategory updated successfully." });
   } catch (error) {
-    console.error("Error deleting subcategory:", error);
-    res.status(500).json({ message: "Failed to delete subcategory." });
+      console.error("Error updating subcategory:", error);
+      res.status(500).json({ message: "Failed to update subcategory." });
   }
 };
+// Delete a subcategory
+
+export const deleteSubcategory = async (req, res) => {
+    const { id } = req.params;
+    try {
+      const sql = "DELETE FROM subcategories WHERE id = ?";
+      const result = await query(sql, [id]);
+  
+      if (result.affectedRows === 0)
+        return res.status(404).json({ message: "Subcategory not found." });
+  
+      res.status(200).json({ message: "Subcategory deleted successfully." });
+    } catch (error) {
+      console.error("Error deleting subcategory:", error);
+      res.status(500).json({ message: "Failed to delete subcategory." });
+    }
+  };
 

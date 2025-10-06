@@ -24,7 +24,7 @@ app.use(cors({
  credentials: true,
  allowedHeaders: ["Content-Type", "Authorization"],
 }));
-
+app.use('/uploads', express.static('uploads'));
 // 3. Routes: CRITICAL SEPARATION
 // Traffic for standard users starts with /api/users (e.g., /api/users/auth/login)
 app.use('/api/users', userRoutes); 
